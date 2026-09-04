@@ -57,14 +57,19 @@ files took 6 s where `du -s` needed 30 s.
 1. Download [Espacio.dmg](https://github.com/manu515256/espacio-app/releases/latest/download/Espacio.dmg),
    open it and drag **Espacio** to **Applications**.
 2. The app is signed ad hoc and not notarized (there is no paid Apple developer
-   account behind it), so the first launch shows "Apple could not verify…".
-   Right-click the app and choose **Open**, or go to *System Settings › Privacy &
-   Security* and click **Open Anyway**. From a terminal this does the same:
+   account behind it), so the first launch shows *"Apple could not verify
+   Espacio.app is free of malware"* with only **Move to Trash** / **Done**.
+   Click **Done**, then open *System Settings › Privacy & Security*, scroll to
+   the **Security** section where it says Espacio was blocked, and click
+   **Open Anyway**. macOS asks for your password once and never again for that
+   copy of the app. From a terminal this does the same thing in one line:
 
    ```bash
    xattr -d com.apple.quarantine /Applications/Espacio.app
    ```
 
+   Both simply remove the quarantine flag the browser put on the download; the
+   app you run is the same one built from this repository.
 3. Grant **Full Disk Access** when the app suggests it. Without it macOS hides
    Mail, Safari, Messages and a few other folders; Espacio tells you how many
    folders it could not read and opens the right settings pane.
