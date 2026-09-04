@@ -1,0 +1,30 @@
+# xcodegen spec — run `xcodegen generate` to get Espacio.xcodeproj for Xcode.
+name: Espacio
+options:
+  bundleIdPrefix: com.manu
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    ENABLE_APP_SANDBOX: "NO"
+    ENABLE_HARDENED_RUNTIME: "NO"
+    SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  Espacio:
+    type: application
+    platform: macOS
+    sources:
+      - path: Sources/Espacio
+      - path: Resources/AppIcon.icns
+        buildPhase: resources
+    settings:
+      base:
+        INFOPLIST_FILE: Resources/Info.plist
+        PRODUCT_BUNDLE_IDENTIFIER: com.manu.espacio
+        PRODUCT_NAME: Espacio
+        SWIFT_OPTIMIZATION_LEVEL: "-O"
