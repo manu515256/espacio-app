@@ -4,6 +4,11 @@ A fast, good-looking disk analyzer and app uninstaller for macOS. Find what is
 eating your disk, see it as a treemap, and get the space back. Everything you
 remove goes to the Trash, never straight to oblivion.
 
+**Free and open source, with no paywall.** No subscriptions, no "unlock to
+delete" button, no accounts, no telemetry, no bundled extras. The whole app is
+in this repository under the MIT license, and the download is the same build
+you can compile yourself.
+
 **[Download Espacio.dmg](https://github.com/manu515256/espacio-app/releases/latest/download/Espacio.dmg)** · macOS 26 (Tahoe) or later · Apple Silicon
 
 *También en español: cambiá el idioma desde el menú 🇺🇸 / 🇪🇸 de la barra superior.*
@@ -66,6 +71,8 @@ files took 6 s where `du -s` needed 30 s.
 
 ## Safety
 
+- Nothing is locked behind a purchase: scanning, exploring and deleting all
+  work the same for everyone, forever.
 - Every removal is a move to the Trash. You can always put things back.
 - Emptying the Trash is delegated to Finder and always asks first.
 - Uninstalling an app quits it first if it is running.
@@ -119,6 +126,12 @@ English translations). Code calls `L("key")` or `L("key %@", args)`; numbers,
 dates and percentages follow the chosen locale. To add a language, add a case to
 `AppLanguage` and the translations to the catalog.
 
+## Contributing
+
+Issues and pull requests are welcome. If a folder was mis-categorized, an app
+left leftovers behind, or a cleanup target is missing from *Quick cleanup*,
+open an issue with the path and Espacio will learn about it.
+
 ## License
 
-[MIT](LICENSE) © 2026 Manuel Doña
+[MIT](LICENSE) © 2026 Manuel Doña. Free to use, study, modify and redistribute.
