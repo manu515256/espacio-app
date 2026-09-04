@@ -1,7 +1,5 @@
 import CoreGraphics
 
-/// Squarified treemap (Bruls, Huizing & van Wijk). Weights must be sorted
-/// descending; returns one rect per weight in the same order.
 enum TreemapLayout {
     static func layout(weights: [Double], in bounds: CGRect) -> [CGRect] {
         var rects = [CGRect](repeating: .zero, count: weights.count)
@@ -70,12 +68,8 @@ struct TreemapItem {
     let rect: CGRect
     let depth: Int
     let hue: Int
-    /// Small per-item hue offset so siblings inside one folder stay in the
-    /// same family but remain distinguishable.
     let shade: Int
-    /// True for the "N more items" bucket that has no real node behind it.
     let synthetic: Bool
-    /// Whether children were laid out inside (so the fill is drawn as a frame).
     let container: Bool
 }
 
@@ -99,7 +93,7 @@ enum TreemapBuilder {
         var restNode: FSNode?
         if !rest.isEmpty {
             let restSize = rest.reduce(Int64(0)) { $0 + $1.size }
-            let n = FSNode(name: "\(rest.count) elementos más", parent: nil, kind: .aggregate, size: restSize, fileCount: Int64(rest.count))
+            let n = FSNode(name: L("%lld elementos más", Int64(rest.count)), parent: nil, kind: .aggregate, size: restSize, fileCount: Int64(rest.count))
             restNode = n
             weights.append(Double(restSize))
         }

@@ -12,8 +12,6 @@ struct InstalledApp: Identifiable, Hashable {
     let fileCount: Int64
     let lastUsed: Date?
     let node: FSNode
-    /// Root of the scan that produced `node`; retained so the parent chain
-    /// (needed for `node.path`) stays alive after discovery finishes.
     let treeRoot: FSNode
 
     var id: String { url.path }
@@ -62,8 +60,6 @@ enum AppInventory {
         ["/Applications", NSHomeDirectory() + "/Applications"]
     }
 
-    /// Scans the application folders and builds the inventory. Fast even with
-    /// Xcode installed because it reuses the parallel engine.
     static func discover() async -> [InstalledApp] {
         var apps: [InstalledApp] = []
         for root in searchRoots where FileManager.default.fileExists(atPath: root) {
@@ -90,8 +86,6 @@ enum AppInventory {
         let url = node.url
         let bundle = Bundle(url: url)
         let info = bundle?.infoDictionary ?? [:]
-        // Same name Finder shows (localized). Finder may keep the extension
-        // when "show all filename extensions" is on, so strip it ourselves.
         var displayName = FileManager.default.displayName(atPath: url.path)
         if displayName.lowercased().hasSuffix(".app") { displayName.removeLast(4) }
         let version = (info["CFBundleShortVersionString"] as? String) ?? (info["CFBundleVersion"] as? String)
@@ -108,8 +102,6 @@ enum AppInventory {
             treeRoot: treeRoot)
     }
 
-    /// Spotlight's last-used date when the index has it; otherwise the access
-    /// time of the main executable, which the loader touches on every launch.
     private static func lastUsedDate(for url: URL, executable: String?) -> Date? {
         if let item = MDItemCreateWithURL(kCFAllocatorDefault, url as CFURL),
            let date = MDItemCopyAttribute(item, kMDItemLastUsedDate) as? Date {
@@ -122,10 +114,6 @@ enum AppInventory {
         return Date(timeIntervalSince1970: Double(st.st_atimespec.tv_sec))
     }
 
-    // MARK: Leftovers
-
-    /// Files outside the bundle that belong to the app: containers, caches,
-    /// preferences, saved state, logs… Matched by bundle id and by app name.
     static func leftovers(for app: InstalledApp) async -> [Leftover] {
         let home = NSHomeDirectory()
         let fm = FileManager.default
@@ -173,7 +161,6 @@ enum AppInventory {
             return entry.lowercased().hasPrefix(bundleID.lowercased() + ".")
         }
 
-        // De-duplicate and never suggest something inside the bundle itself.
         var seen = Set<String>()
         var result: [Leftover] = []
         for (path, kind) in candidates where !seen.contains(path) && !path.hasPrefix(app.url.path) {
@@ -186,7 +173,6 @@ enum AppInventory {
 }
 
 extension DiskScanner {
-    /// Allocated size of a file or a whole directory tree, using the parallel engine.
     static func allocatedSize(of path: String) async -> Int64 {
         var isDir: ObjCBool = false
         guard FileManager.default.fileExists(atPath: path, isDirectory: &isDir) else { return 0 }

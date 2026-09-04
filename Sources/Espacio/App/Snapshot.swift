@@ -1,8 +1,6 @@
 import AppKit
 import SwiftUI
 
-/// Debug aid: `ESPACIO_SNAPSHOT_DIR=/tmp/x Espacio.app` waits for the scan,
-/// walks every section, writes a PNG of the window for each, and quits.
 enum Snapshot {
     @MainActor
     static func runIfRequested(state: AppState) {
@@ -30,6 +28,10 @@ enum Snapshot {
                 let msg = "ESPACIO_UNINSTALL \(app.url.path) leftovers=\(leftovers.map(\.url.path)) failures=\(fails.map(\.message)) remaining=\(state.apps.contains(where: { $0.name == victim }))\n"
                 FileHandle.standardError.write(msg.data(using: .utf8)!)
             }
+            if let raw = ProcessInfo.processInfo.environment["ESPACIO_SNAPSHOT_SWITCH_LANG"], let lang = AppLanguage(rawValue: raw) {
+                state.setLanguage(lang)
+                try? await Task.sleep(for: .seconds(1))
+            }
             if let wanted = ProcessInfo.processInfo.environment["ESPACIO_SNAPSHOT_APP"] {
                 state.selectedApp = state.apps.first { $0.name.localizedCaseInsensitiveContains(wanted) }
             }
@@ -47,8 +49,6 @@ enum Snapshot {
         }
     }
 
-    /// Real composited pixels (glass included) via `screencapture -l`, which
-    /// only works when the launching process has Screen Recording permission.
     @MainActor
     static func external(section: AppSection, dir: String) {
         guard let window = NSApp.windows.first(where: { $0.isVisible }) else { return }

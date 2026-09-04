@@ -1,4 +1,3 @@
-# xcodegen spec — run `xcodegen generate` to get Espacio.xcodeproj for Xcode.
 name: Espacio
 options:
   bundleIdPrefix: com.manu

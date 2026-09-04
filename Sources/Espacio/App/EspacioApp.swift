@@ -5,9 +5,6 @@ struct EspacioApp: App {
     @State private var state = AppState()
 
     init() {
-        // A single-window utility has nothing worth restoring, and a stale
-        // "no windows" restoration state would otherwise launch the app
-        // without its window.
         UserDefaults.standard.register(defaults: [
             "ApplePersistenceIgnoreState": true,
             "NSQuitAlwaysKeepsWindows": false,

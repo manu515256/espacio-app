@@ -1,9 +1,6 @@
 import Foundation
 import Synchronization
 
-/// Lock-protected bounded min-heap that keeps the K largest files seen so far.
-/// Workers check the atomic threshold first so the lock is only taken when a
-/// file could actually enter the heap — which is rare once the heap is full.
 final class TopFiles: @unchecked Sendable {
     private let capacity: Int
     private var heap: [(size: Int64, node: FSNode)] = []

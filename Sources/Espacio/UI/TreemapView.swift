@@ -1,9 +1,6 @@
 import AppKit
 import SwiftUI
 
-/// Interactive squarified treemap. The map itself is rasterised once per
-/// (root, size, version) with CoreGraphics — deterministic and cheap — while
-/// hover, selection and the tooltip are lightweight SwiftUI overlays.
 struct TreemapView: View {
     let root: FSNode
     let version: Int
@@ -59,17 +56,17 @@ struct TreemapView: View {
                     .contextMenu {
                         if let n = hovered, n.parent != nil {
                             Text(n.displayName)
-                            Button("Mostrar en Finder", systemImage: "finder") { TrashService.reveal(n.url) }
+                            Button(L("Mostrar en Finder"), systemImage: "finder") { TrashService.reveal(n.url) }
                             if n.kind == .bundle, state.apps.contains(where: { $0.url.path == n.path }) {
-                                Button("Ver en Aplicaciones", systemImage: "square.grid.2x2") { state.showApp(at: n.path) }
+                                Button(L("Ver en Aplicaciones"), systemImage: "square.grid.2x2") { state.showApp(at: n.path) }
                             }
-                            if n.isDirectory { Button("Abrir acá", systemImage: "arrow.down.right.and.arrow.up.left") { onZoom(n) } }
-                            Button("Copiar ruta", systemImage: "doc.on.doc") {
+                            if n.isDirectory { Button(L("Abrir acá"), systemImage: "arrow.down.right.and.arrow.up.left") { onZoom(n) } }
+                            Button(L("Copiar ruta"), systemImage: "doc.on.doc") {
                                 NSPasteboard.general.clearContents()
                                 NSPasteboard.general.setString(n.path, forType: .string)
                             }
                             Divider()
-                            Button("Mover a la Papelera", systemImage: "trash", role: .destructive) { onTrash(n) }
+                            Button(L("Mover a la Papelera"), systemImage: "trash", role: .destructive) { onTrash(n) }
                         }
                     }
 
@@ -107,7 +104,7 @@ struct TreemapView: View {
     private func hitTest(_ p: CGPoint) -> TreemapItem? {
         var best: TreemapItem?
         for item in items where item.rect.contains(p) {
-            best = item // later items are deeper
+            best = item
         }
         return best
     }
@@ -120,8 +117,8 @@ struct TreemapView: View {
             Text(n.displayName).font(.system(size: 12, weight: .semibold)).lineLimit(1)
             HStack(spacing: 6) {
                 Text(ByteFormat.string(n.size)).font(.system(size: 12, weight: .bold, design: .rounded)).monospacedDigit()
-                Text(String(format: "%.1f %%", pct)).font(.caption).foregroundStyle(.secondary)
-                if n.isDirectory { Text("· \(ByteFormat.count(n.fileCount)) archivos").font(.caption).foregroundStyle(.secondary) }
+                Text(String(format: "%.1f %%", locale: AppLanguage.current.locale, pct)).font(.caption).foregroundStyle(.secondary)
+                if n.isDirectory { Text(L("· %@ archivos", ByteFormat.count(n.fileCount))).font(.caption).foregroundStyle(.secondary) }
             }
             if !item.synthetic {
                 Text(n.prettyPath).font(.caption2).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
@@ -135,8 +132,6 @@ struct TreemapView: View {
         .allowsHitTesting(false)
     }
 }
-
-// MARK: - Rasteriser
 
 enum TreemapRenderer {
     private static let titleFont = NSFont.systemFont(ofSize: 11, weight: .semibold)
@@ -154,7 +149,6 @@ enum TreemapRenderer {
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = ctx
         let cg = ctx.cgContext
-        // Top-left origin like SwiftUI.
         cg.translateBy(x: 0, y: size.height)
         cg.scaleBy(x: 1, y: -1)
         let flipped = NSGraphicsContext(cgContext: cg, flipped: true)

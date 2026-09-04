@@ -10,8 +10,8 @@ enum ByteFormat {
         return f
     }()
 
-    /// Finder-style decimal units: 1 GB = 1.000.000.000 bytes.
     static func string(_ bytes: Int64) -> String {
+        formatter.locale = AppLanguage.current.locale
         let b = Double(max(bytes, 0))
         let units = ["bytes", "KB", "MB", "GB", "TB"]
         var value = b
@@ -34,11 +34,13 @@ enum ByteFormat {
     }
 
     static func count(_ n: Int64) -> String {
+        formatter.locale = AppLanguage.current.locale
         formatter.maximumFractionDigits = 0
         return formatter.string(from: NSNumber(value: n)) ?? "\(n)"
     }
 
     static func duration(_ s: TimeInterval) -> String {
-        s < 1 ? String(format: "%.0f ms", s * 1000) : String(format: "%.1f s", s)
+        s < 1 ? String(format: "%.0f ms", locale: AppLanguage.current.locale, s * 1000)
+              : String(format: "%.1f s", locale: AppLanguage.current.locale, s)
     }
 }

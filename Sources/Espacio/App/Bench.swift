@@ -1,6 +1,5 @@
 import Foundation
 
-/// `Espacio --bench [path]` — runs the engine headless and prints timings.
 enum Bench {
     static func runIfRequested() {
         let args = CommandLine.arguments

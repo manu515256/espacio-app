@@ -50,15 +50,15 @@ struct AppsView: View {
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionTitle(title: "Aplicaciones",
-                             subtitle: state.appsLoading ? "Buscando apps…" : "\(state.apps.count) apps · \(ByteFormat.string(totalBytes))")
+                SectionTitle(title: L("Aplicaciones"),
+                             subtitle: state.appsLoading ? L("Buscando apps…") : L("%lld apps · %@", Int64(state.apps.count), ByteFormat.string(totalBytes)))
                 Spacer()
                 if state.appsLoading { ProgressView().controlSize(.small) }
             }
             HStack(spacing: 8) {
-                TextField("Buscar app", text: $query).textFieldStyle(.roundedBorder)
-                Picker("Orden", selection: $sort) {
-                    ForEach(Sort.allCases) { Text($0.rawValue).tag($0) }
+                TextField(L("Buscar app"), text: $query).textFieldStyle(.roundedBorder)
+                Picker(L("Orden"), selection: $sort) {
+                    ForEach(Sort.allCases) { Text(L($0.rawValue)).tag($0) }
                 }
                 .labelsHidden().pickerStyle(.menu).frame(width: 120)
             }
@@ -79,7 +79,7 @@ struct AppsView: View {
     private var placeholder: some View {
         VStack(spacing: 12) {
             Image(systemName: "app.dashed").font(.system(size: 44)).foregroundStyle(.secondary)
-            Text("Elegí una app para ver cuánto ocupa y desinstalarla con todos sus restos.")
+            Text(L("Elegí una app para ver cuánto ocupa y desinstalarla con todos sus restos."))
                 .foregroundStyle(.secondary).multilineTextAlignment(.center).frame(maxWidth: 340)
         }
     }
@@ -116,8 +116,8 @@ struct AppRow: View {
 
     private var subtitle: String {
         var parts: [String] = []
-        if let v = app.version { parts.append("v\(v)") }
-        if let d = app.lastUsed { parts.append("usada \(d.relativeSpanish)") } else { parts.append("sin uso registrado") }
+        if let v = app.version { parts.append(L("v%@", v)) }
+        if let d = app.lastUsed { parts.append(L("usada %@", d.relativeDescription)) } else { parts.append(L("sin uso registrado")) }
         return parts.joined(separator: " · ")
     }
 }
@@ -143,16 +143,16 @@ struct AppDetailView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
                 HStack(spacing: 12) {
-                    StatTile(title: "la app", value: ByteFormat.string(app.size), symbol: "app.fill", tint: FileCategory.apps.color)
-                    StatTile(title: "restos fuera de la app", value: loading ? "…" : ByteFormat.string(leftoverBytes), symbol: "tray.full.fill", tint: FileCategory.caches.color)
-                    StatTile(title: "archivos", value: ByteFormat.count(app.fileCount), symbol: "doc.fill", tint: Theme.info)
-                    StatTile(title: "último uso", value: app.lastUsed?.relativeSpanish ?? "—", symbol: "clock.fill", tint: FileCategory.appData.color)
+                    StatTile(title: L("la app"), value: ByteFormat.string(app.size), symbol: "app.fill", tint: FileCategory.apps.color)
+                    StatTile(title: L("restos fuera de la app"), value: loading ? "…" : ByteFormat.string(leftoverBytes), symbol: "tray.full.fill", tint: FileCategory.caches.color)
+                    StatTile(title: L("archivos"), value: ByteFormat.count(app.fileCount), symbol: "doc.fill", tint: Theme.info)
+                    StatTile(title: L("último uso"), value: app.lastUsed?.relativeDescription ?? "—", symbol: "clock.fill", tint: FileCategory.appData.color)
                 }
                 leftoversCard
                 if !failures.isEmpty {
                     Card(padding: 14) {
                         VStack(alignment: .leading, spacing: 6) {
-                            Label("Algunos elementos no se pudieron mover", systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.accent)
+                            Label(L("Algunos elementos no se pudieron mover"), systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.accent)
                             ForEach(failures) { f in
                                 Text("\(f.url.path): \(f.message)").font(.caption).foregroundStyle(.secondary)
                             }
@@ -170,11 +170,11 @@ struct AppDetailView: View {
             chosen = Set(found.map(\.id))
             loading = false
         }
-        .confirmationDialog("¿Desinstalar \(app.name)?", isPresented: $confirm, titleVisibility: .visible) {
-            Button("Mover todo a la Papelera", role: .destructive) { uninstall() }
-            Button("Cancelar", role: .cancel) {}
+        .confirmationDialog(L("¿Desinstalar %@?", app.name), isPresented: $confirm, titleVisibility: .visible) {
+            Button(L("Mover todo a la Papelera"), role: .destructive) { uninstall() }
+            Button(L("Cancelar"), role: .cancel) {}
         } message: {
-            Text("Se moverán la app y \(chosenLeftovers.count) archivos relacionados (\(ByteFormat.string(toFree))) a la Papelera.\(app.isRunning ? " La app se cerrará primero." : "")")
+            Text(L("Se moverán la app y %lld archivos relacionados (%@) a la Papelera.", Int64(chosenLeftovers.count), ByteFormat.string(toFree)) + (app.isRunning ? L(" La app se cerrará primero.") : ""))
         }
     }
 
@@ -185,11 +185,11 @@ struct AppDetailView: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     Text(app.name).font(.system(.largeTitle, design: .rounded, weight: .bold))
-                    if app.isRunning { Badge(text: "En ejecución", color: Theme.ok) }
-                    if app.isSelf { Badge(text: "Esta app", color: Theme.info) }
+                    if app.isRunning { Badge(text: L("En ejecución"), color: Theme.ok) }
+                    if app.isSelf { Badge(text: L("Esta app"), color: Theme.info) }
                 }
                 HStack(spacing: 8) {
-                    if let v = app.version { Text("Versión \(v)") }
+                    if let v = app.version { Text(L("Versión %@", v)) }
                     if let id = app.bundleID { Text("·"); Text(id).textSelection(.enabled) }
                 }
                 .font(.callout).foregroundStyle(.secondary)
@@ -203,19 +203,19 @@ struct AppDetailView: View {
         Card {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    SectionTitle(title: "Archivos relacionados", subtitle: "Cachés, preferencias y datos que quedan al borrar solo la app")
+                    SectionTitle(title: L("Archivos relacionados"), subtitle: L("Cachés, preferencias y datos que quedan al borrar solo la app"))
                     Spacer()
                     if !leftovers.isEmpty {
-                        Button(chosen.count == leftovers.count ? "Ninguno" : "Todos") {
+                        Button(chosen.count == leftovers.count ? L("Ninguno") : L("Todos")) {
                             chosen = chosen.count == leftovers.count ? [] : Set(leftovers.map(\.id))
                         }
                         .buttonStyle(.glass).tint(.clear).controlSize(.small)
                     }
                 }
                 if loading {
-                    HStack { ProgressView().controlSize(.small); Text("Buscando restos…").foregroundStyle(.secondary) }
+                    HStack { ProgressView().controlSize(.small); Text(L("Buscando restos…")).foregroundStyle(.secondary) }
                 } else if leftovers.isEmpty {
-                    Text("No encontré archivos fuera del paquete de la app.").foregroundStyle(.secondary)
+                    Text(L("No encontré archivos fuera del paquete de la app.")).foregroundStyle(.secondary)
                 } else {
                     ForEach(leftovers) { item in
                         Toggle(isOn: Binding(
@@ -226,7 +226,7 @@ struct AppDetailView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     HStack(spacing: 6) {
                                         Text(item.url.lastPathComponent).font(.callout.weight(.medium)).lineLimit(1)
-                                        Badge(text: item.kind.rawValue)
+                                        Badge(text: L(item.kind.rawValue))
                                     }
                                     Text(item.url.path.replacingOccurrences(of: NSHomeDirectory(), with: "~"))
                                         .font(.caption).foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
@@ -237,7 +237,7 @@ struct AppDetailView: View {
                         }
                         .toggleStyle(.checkbox)
                         .contextMenu {
-                            Button("Mostrar en Finder", systemImage: "finder") { TrashService.reveal(item.url) }
+                            Button(L("Mostrar en Finder"), systemImage: "finder") { TrashService.reveal(item.url) }
                         }
                     }
                 }
@@ -248,17 +248,17 @@ struct AppDetailView: View {
     private var actionBar: some View {
         HStack(spacing: 14) {
             VStack(alignment: .leading, spacing: 1) {
-                Text("Liberás \(ByteFormat.string(toFree))").font(.callout.weight(.semibold)).monospacedDigit()
-                Text(chosenLeftovers.count == 1 ? "app + 1 archivo relacionado" : "app + \(chosenLeftovers.count) archivos relacionados")
+                Text(L("Liberás %@", ByteFormat.string(toFree))).font(.callout.weight(.semibold)).monospacedDigit()
+                Text(chosenLeftovers.count == 1 ? L("app + 1 archivo relacionado") : L("app + %lld archivos relacionados", Int64(chosenLeftovers.count)))
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
-            Button("Mostrar en Finder", systemImage: "finder") { TrashService.reveal(app.url) }
+            Button(L("Mostrar en Finder"), systemImage: "finder") { TrashService.reveal(app.url) }
                 .buttonStyle(.glass).tint(.clear)
             Button {
                 confirm = true
             } label: {
-                if working { ProgressView().controlSize(.small) } else { Label("Desinstalar", systemImage: "trash") }
+                if working { ProgressView().controlSize(.small) } else { Label(L("Desinstalar"), systemImage: "trash") }
             }
             .buttonStyle(.glassProminent).tint(Theme.danger)
             .disabled(working || app.isSelf)

@@ -1,9 +1,6 @@
 import AppKit
 import Foundation
 
-/// Moves files to the Trash. Tries the plain FileManager route first and falls
-/// back to asking Finder (which shows the admin-password prompt) for items the
-/// current user cannot move, e.g. root-owned apps installed by a .pkg.
 enum TrashService {
     struct Failure: Identifiable {
         let id = UUID()
@@ -37,7 +34,6 @@ enum TrashService {
         return failures
     }
 
-    /// Returns an error message, or nil on success.
     @MainActor
     private static func finderTrash(_ urls: [URL]) -> String? {
         let items = urls.map { "POSIX file \"\(escape($0.path))\"" }.joined(separator: ", ")
@@ -47,10 +43,10 @@ enum TrashService {
         end tell
         """
         var error: NSDictionary?
-        guard let script = NSAppleScript(source: source) else { return "No se pudo crear el script." }
+        guard let script = NSAppleScript(source: source) else { return L("No se pudo crear el script.") }
         script.executeAndReturnError(&error)
         if let error {
-            return error[NSAppleScript.errorMessage] as? String ?? "Finder rechazó la operación."
+            return error[NSAppleScript.errorMessage] as? String ?? L("Finder rechazó la operación.")
         }
         return nil
     }
@@ -59,7 +55,7 @@ enum TrashService {
     static func emptyTrash() -> String? {
         var error: NSDictionary?
         NSAppleScript(source: "tell application \"Finder\" to empty trash")?.executeAndReturnError(&error)
-        if let error { return error[NSAppleScript.errorMessage] as? String ?? "Finder rechazó la operación." }
+        if let error { return error[NSAppleScript.errorMessage] as? String ?? L("Finder rechazó la operación.") }
         return nil
     }
 

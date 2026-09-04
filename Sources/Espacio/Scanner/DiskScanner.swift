@@ -3,13 +3,9 @@ import Darwin
 import Synchronization
 
 public struct ScanOptions: Sendable {
-    /// Files smaller than this are folded into one aggregate node per directory.
-    /// Keeps memory flat on volumes with millions of tiny files.
     public var minFileSize: Int64 = 64 * 1024
     public var threads: Int = max(4, min(16, ProcessInfo.processInfo.activeProcessorCount))
     public var topFileCount: Int = 2000
-    /// Absolute paths never descended into. `/System/Volumes` holds the data
-    /// volume (already visible through firmlinks) plus VM/Preboot volumes.
     public var skipPaths: Set<String> = [
         "/System/Volumes", "/Volumes", "/dev", "/Network", "/.vol", "/home", "/net",
         "/private/var/vm", "/private/var/db/dyld", "/System/Library/Templates",
@@ -17,7 +13,6 @@ public struct ScanOptions: Sendable {
     public init() {}
 }
 
-/// Live counters read by the UI while a scan is running.
 public final class ScanProgress: @unchecked Sendable {
     let files = Atomic<Int64>(0)
     let dirs = Atomic<Int64>(0)
@@ -43,16 +38,11 @@ public struct ScanResult: @unchecked Sendable {
     public let wasCancelled: Bool
 }
 
-// MARK: - Work queue
-
 private struct Job {
     let node: FSNode
     let path: String
 }
 
-/// Shared LIFO of directories waiting to be read. LIFO keeps the traversal
-/// depth-first so the number of pending jobs stays proportional to tree depth
-/// times fan-out rather than to the total directory count.
 private final class JobQueue: @unchecked Sendable {
     private var jobs: [Job] = []
     private let cond = NSCondition()
@@ -67,7 +57,6 @@ private final class JobQueue: @unchecked Sendable {
         cond.unlock()
     }
 
-    /// Blocks until a job is available. Returns nil when the scan is complete.
     func next() -> Job? {
         cond.lock()
         defer { cond.unlock() }
@@ -101,11 +90,6 @@ private final class JobQueue: @unchecked Sendable {
     }
 }
 
-// MARK: - Scanner
-
-/// Parallel directory walker built on `getattrlistbulk(2)`: one syscall returns
-/// name, type, size and mtime for hundreds of entries at a time, which is what
-/// makes it several times faster than `readdir` + `stat` per entry.
 public final class DiskScanner: @unchecked Sendable {
     public let options: ScanOptions
     public let progress = ScanProgress()
@@ -126,11 +110,8 @@ public final class DiskScanner: @unchecked Sendable {
         queue.stop()
     }
 
-    /// Largest files seen so far, sorted descending. Safe to call mid-scan.
     public func topSnapshot() -> [FSNode] { top.snapshot() }
 
-    /// Runs the scan on its own thread pool and delivers the result on an
-    /// arbitrary thread when the last worker exits.
     public func scan(root rootPath: String) async -> ScanResult {
         await withCheckedContinuation { cont in
             start(root: rootPath) { cont.resume(returning: $0) }
@@ -169,9 +150,6 @@ public final class DiskScanner: @unchecked Sendable {
         }
     }
 
-    /// The boot volume is really two APFS volumes (System + Data) stitched
-    /// together with firmlinks, so both device ids are allowed. Anything else
-    /// (external disks, DMGs, network mounts) is a foreign device and skipped.
     private static func deviceSet(for path: String) -> [Int32] {
         func dev(_ p: String) -> Int32? {
             var st = stat()
@@ -185,8 +163,6 @@ public final class DiskScanner: @unchecked Sendable {
         }
         return set
     }
-
-    // MARK: Worker
 
     private static let bufferSize = 512 * 1024
 
@@ -219,8 +195,6 @@ public final class DiskScanner: @unchecked Sendable {
         attrs.fileattr = Self.fileAttrMask
 
         while var job = queue.next() {
-            // Process one job from the shared queue, then keep descending into
-            // the last subdirectory locally (no lock traffic) until the branch ends.
             while true {
                 let local = readDirectory(job, buffer: buffer, attrs: &attrs)
                 guard let nextJob = local, !progress.isCancelled else { break }
@@ -230,8 +204,6 @@ public final class DiskScanner: @unchecked Sendable {
         }
     }
 
-    /// Reads one directory. Pushes all subdirectories but one onto the shared
-    /// queue and returns the remaining one for the caller to continue with.
     private func readDirectory(_ job: Job, buffer: UnsafeMutableRawPointer, attrs: inout attrlist) -> Job? {
         let node = job.node
         let path = job.path
@@ -313,7 +285,7 @@ public final class DiskScanner: @unchecked Sendable {
                 guard entryError == 0, let namePtr else { continue }
 
                 switch objType {
-                case 2: // VDIR
+                case 2:
                     if !allowedDevices.isEmpty && !allowedDevices.contains(devid) { continue }
                     let name = String(cString: namePtr)
                     let childPath = isRootSlash ? "/" + name : path + "/" + name
@@ -322,7 +294,7 @@ public final class DiskScanner: @unchecked Sendable {
                     let child = FSNode(name: name, parent: node, kind: kind)
                     kids.append(child)
                     subJobs.append(Job(node: child, path: childPath))
-                case 1: // VREG
+                case 1:
                     if linkCount > 1 {
                         hardLinkLock.lock()
                         let inserted = seenHardLinks.insert(fileID).inserted
@@ -341,7 +313,7 @@ public final class DiskScanner: @unchecked Sendable {
                         smallCount += 1
                     }
                 default:
-                    continue // symlinks, sockets, fifos, devices
+                    continue
                 }
             }
         }
@@ -351,8 +323,6 @@ public final class DiskScanner: @unchecked Sendable {
         }
         node.children = kids
 
-        // Propagate this directory's own file bytes to every ancestor once,
-        // instead of once per file.
         if fileBytes != 0 || fileCount != 0 {
             var cursor: FSNode? = node
             while let n = cursor {

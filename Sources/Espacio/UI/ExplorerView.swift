@@ -12,25 +12,25 @@ struct ExplorerView: View {
             } else {
                 VStack(spacing: 12) {
                     if state.isScanning { ScanRing(size: 60, lineWidth: 6) }
-                    Text(state.isScanning ? "El explorador aparece cuando termina el escaneo." : "Todavía no hay un escaneo.")
+                    Text(state.isScanning ? L("El explorador aparece cuando termina el escaneo.") : L("Todavía no hay un escaneo."))
                         .foregroundStyle(.secondary)
                 }
             }
         }
         .confirmationDialog(
-            "¿Mover “\(pendingTrash?.displayName ?? "")” (\(ByteFormat.string(pendingTrash?.size ?? 0))) a la Papelera?",
+            L("¿Mover “%@” (%@) a la Papelera?", pendingTrash?.displayName ?? "", ByteFormat.string(pendingTrash?.size ?? 0)),
             isPresented: Binding(get: { pendingTrash != nil }, set: { if !$0 { pendingTrash = nil } }),
             titleVisibility: .visible
         ) {
-            Button("Mover a la Papelera", role: .destructive) {
+            Button(L("Mover a la Papelera"), role: .destructive) {
                 guard let n = pendingTrash else { return }
                 pendingTrash = nil
                 if selected === n { selected = nil }
                 Task { await state.trash([n]) }
             }
-            Button("Cancelar", role: .cancel) { pendingTrash = nil }
+            Button(L("Cancelar"), role: .cancel) { pendingTrash = nil }
         } message: {
-            Text("Podés recuperarlo desde la Papelera. El espacio se libera al vaciarla.")
+            Text(L("Podés recuperarlo desde la Papelera. El espacio se libera al vaciarla."))
         }
     }
 
@@ -84,9 +84,9 @@ struct ExplorerView: View {
             .glassEffect(.regular, in: .capsule)
 
             Spacer()
-            Text("\(ByteFormat.string(root.size)) · \(ByteFormat.count(root.fileCount)) archivos")
+            Text(L("%@ · %@ archivos", ByteFormat.string(root.size), ByteFormat.count(root.fileCount)))
                 .font(.callout).foregroundStyle(.secondary).monospacedDigit()
-            Button("Mostrar en Finder", systemImage: "finder") { TrashService.reveal(root.url) }
+            Button(L("Mostrar en Finder"), systemImage: "finder") { TrashService.reveal(root.url) }
                 .buttonStyle(.glass).tint(.clear)
         }
     }
@@ -95,7 +95,7 @@ struct ExplorerView: View {
         VStack(spacing: 12) {
             Card(padding: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Contenido").font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.horizontal, 6)
+                    Text(L("Contenido")).font(.caption.weight(.semibold)).foregroundStyle(.secondary).padding(.horizontal, 6)
                     ScrollView {
                         LazyVStack(spacing: 2) {
                             let kids = root.sortedChildren().filter { $0.size > 0 }
@@ -107,8 +107,8 @@ struct ExplorerView: View {
                                     }
                                     .contextMenu {
                                         if n.kind != .aggregate {
-                                            Button("Mostrar en Finder", systemImage: "finder") { TrashService.reveal(n.url) }
-                                            Button("Mover a la Papelera", systemImage: "trash", role: .destructive) { pendingTrash = n }
+                                            Button(L("Mostrar en Finder"), systemImage: "finder") { TrashService.reveal(n.url) }
+                                            Button(L("Mover a la Papelera"), systemImage: "trash", role: .destructive) { pendingTrash = n }
                                         }
                                     }
                             }
@@ -126,14 +126,14 @@ struct ExplorerView: View {
                                 Text(ByteFormat.string(n.size)).font(.system(.title3, design: .rounded, weight: .bold)).monospacedDigit()
                             }
                         }
-                        if let d = n.modifiedDate { Text("Modificado \(d.relativeSpanish)").font(.caption).foregroundStyle(.secondary) }
+                        if let d = n.modifiedDate { Text(L("Modificado %@", d.relativeDescription)).font(.caption).foregroundStyle(.secondary) }
                         Text(n.prettyPath).font(.caption).foregroundStyle(.secondary).lineLimit(2).truncationMode(.middle).textSelection(.enabled)
                         HStack {
-                            Button("Mostrar", systemImage: "finder") { TrashService.reveal(n.url) }
+                            Button(L("Mostrar"), systemImage: "finder") { TrashService.reveal(n.url) }
                                 .buttonStyle(.glass).tint(.clear).controlSize(.small)
                             Spacer()
                             if n.kind != .aggregate {
-                                Button("Papelera", systemImage: "trash") { pendingTrash = n }
+                                Button(L("Papelera"), systemImage: "trash") { pendingTrash = n }
                                     .buttonStyle(.glassProminent).tint(Theme.danger).controlSize(.small)
                             }
                         }

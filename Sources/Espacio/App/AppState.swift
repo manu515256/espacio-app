@@ -9,10 +9,10 @@ enum AppSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .overview: "Resumen"
-        case .apps: "Aplicaciones"
-        case .files: "Archivos grandes"
-        case .explorer: "Explorador"
+        case .overview: L("Resumen")
+        case .apps: L("Aplicaciones")
+        case .files: L("Archivos grandes")
+        case .explorer: L("Explorador")
         }
     }
 
@@ -60,38 +60,40 @@ final class AppState {
 
     var phase: Phase = .idle
     var section: AppSection = .overview
+    var language: AppLanguage = AppLanguage.current
+
+    func setLanguage(_ lang: AppLanguage) {
+        guard lang != language else { return }
+        AppLanguage.current = lang
+        language = lang
+        refreshVolume()
+    }
     var scanRoot = "/"
     var volume: VolumeInfo?
 
-    // Live counters while scanning
     var liveFiles: Int64 = 0
     var liveDirs: Int64 = 0
     var liveBytes: Int64 = 0
     var liveDenied: Int64 = 0
     var liveTop: [FSNode] = []
 
-    // Results
     var result: ScanResult?
     var topFiles: [FSNode] = []
     var categories: [CategoryTotal] = []
     var quickWins: [QuickWin] = []
     var explorerRoot: FSNode?
-    /// Bumped whenever the tree is mutated (after trashing) so views refresh.
     var treeVersion = 0
 
-    // Apps
     var apps: [InstalledApp] = []
     var appsLoading = false
     var selectedApp: InstalledApp?
 
-    /// Jump to the Applications section with the given bundle selected.
     func showApp(at path: String) {
         guard let app = apps.first(where: { $0.url.path == path }) else { return }
         selectedApp = app
         section = .apps
     }
 
-    // Trash bookkeeping
     var trashedBytes: Int64 = 0
     var failures: [TrashService.Failure] = []
 
@@ -100,8 +102,6 @@ final class AppState {
 
     var root: FSNode? { result?.root }
     var isScanning: Bool { phase == .scanning }
-
-    // MARK: Lifecycle
 
     func bootstrap() {
         guard phase == .idle else { return }
@@ -116,7 +116,7 @@ final class AppState {
                                          .volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey]
         guard let v = try? url.resourceValues(forKeys: keys) else { return }
         volume = VolumeInfo(
-            name: v.volumeName ?? "Disco",
+            name: v.volumeName ?? L("Disco"),
             total: Int64(v.volumeTotalCapacity ?? 0),
             available: v.volumeAvailableCapacityForImportantUsage ?? Int64(v.volumeAvailableCapacity ?? 0),
             availableStrict: Int64(v.volumeAvailableCapacity ?? 0))
@@ -132,8 +132,6 @@ final class AppState {
             appsLoading = false
         }
     }
-
-    // MARK: Scanning
 
     func startScan(path: String? = nil) {
         if let path { scanRoot = path }
@@ -200,9 +198,6 @@ final class AppState {
         quickWins = QuickWins.build(root: root)
     }
 
-    // MARK: Mutations
-
-    /// Moves nodes of the scanned tree to the Trash.
     @discardableResult
     func trash(_ nodes: [FSNode]) async -> [TrashService.Failure] {
         let unique = Array(Set(nodes))
@@ -211,8 +206,6 @@ final class AppState {
         return await trash(urls: unique.map(\.url), knownSizes: sizes)
     }
 
-    /// Moves arbitrary paths to the Trash and keeps every in-memory structure
-    /// (disk tree, top files, app inventory, explorer position) consistent.
     @discardableResult
     func trash(urls: [URL], knownSizes: [String: Int64] = [:]) async -> [TrashService.Failure] {
         let fails = await TrashService.trash(urls)
@@ -226,7 +219,6 @@ final class AppState {
     private func applyRemoval(paths: [String], knownSizes: [String: Int64]) {
         guard !paths.isEmpty else { return }
 
-        // Disk tree
         var removedNodes: [FSNode] = []
         for p in paths {
             if let n = root?.find(path: p) {
@@ -244,7 +236,6 @@ final class AppState {
         topFiles.removeAll(where: isGone)
         for n in removedNodes { n.parent?.removeChild(n) }
 
-        // App inventory (its own tree)
         let removedApps = apps.filter { app in
             paths.contains { app.url.path == $0 || app.url.path.hasPrefix($0 + "/") }
         }
@@ -292,11 +283,7 @@ extension DiskScanner {
     }
 }
 
-// MARK: - Derived data
-
 enum CategoryTotals {
-    /// Single DFS that carries the inherited category down, so the cost is
-    /// O(nodes) instead of O(nodes × depth).
     static func compute(root: FSNode) -> [CategoryTotal] {
         var totals = [Int64](repeating: 0, count: FileCategory.allCases.count)
         let index = Dictionary(uniqueKeysWithValues: FileCategory.allCases.enumerated().map { ($1, $0) })

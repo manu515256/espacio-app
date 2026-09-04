@@ -7,19 +7,19 @@ enum FileCategory: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .apps: "Aplicaciones"
-        case .video: "Video"
-        case .images: "Imágenes"
-        case .audio: "Audio"
-        case .archives: "Archivos comprimidos"
-        case .documents: "Documentos"
-        case .code: "Código y desarrollo"
-        case .diskImages: "Máquinas virtuales e imágenes de disco"
-        case .caches: "Cachés y temporales"
-        case .appData: "Datos de apps"
-        case .system: "Sistema"
-        case .other: "Otros"
-        case .small: "Archivos pequeños"
+        case .apps: L("Aplicaciones")
+        case .video: L("Video")
+        case .images: L("Imágenes")
+        case .audio: L("Audio")
+        case .archives: L("Archivos comprimidos")
+        case .documents: L("Documentos")
+        case .code: L("Código y desarrollo")
+        case .diskImages: L("Máquinas virtuales e imágenes de disco")
+        case .caches: L("Cachés y temporales")
+        case .appData: L("Datos de apps")
+        case .system: L("Sistema")
+        case .other: L("Otros")
+        case .small: L("Archivos pequeños")
         }
     }
 
@@ -43,16 +43,16 @@ enum FileCategory: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
-        case .apps: Color(hue: 0.58, saturation: 0.50, brightness: 0.74)       // steel blue
-        case .video: Color(hue: 0.03, saturation: 0.55, brightness: 0.78)      // terracotta
-        case .images: Color(hue: 0.11, saturation: 0.62, brightness: 0.82)     // ochre
-        case .audio: Color(hue: 0.76, saturation: 0.30, brightness: 0.72)      // dusty violet
-        case .archives: Color(hue: 0.08, saturation: 0.45, brightness: 0.72)   // tan
-        case .documents: Color(hue: 0.55, saturation: 0.42, brightness: 0.78)  // sky
-        case .code: Color(hue: 0.26, saturation: 0.40, brightness: 0.66)       // olive
-        case .diskImages: Color(hue: 0.62, saturation: 0.38, brightness: 0.70) // slate indigo
-        case .caches: Color(hue: 0.06, saturation: 0.65, brightness: 0.86)     // burnt orange
-        case .appData: Color(hue: 0.47, saturation: 0.35, brightness: 0.68)    // sea teal
+        case .apps: Color(hue: 0.58, saturation: 0.50, brightness: 0.74)
+        case .video: Color(hue: 0.03, saturation: 0.55, brightness: 0.78)
+        case .images: Color(hue: 0.11, saturation: 0.62, brightness: 0.82)
+        case .audio: Color(hue: 0.76, saturation: 0.30, brightness: 0.72)
+        case .archives: Color(hue: 0.08, saturation: 0.45, brightness: 0.72)
+        case .documents: Color(hue: 0.55, saturation: 0.42, brightness: 0.78)
+        case .code: Color(hue: 0.26, saturation: 0.40, brightness: 0.66)
+        case .diskImages: Color(hue: 0.62, saturation: 0.38, brightness: 0.70)
+        case .caches: Color(hue: 0.06, saturation: 0.65, brightness: 0.86)
+        case .appData: Color(hue: 0.47, saturation: 0.35, brightness: 0.68)
         case .system: Color(white: 0.48)
         case .other: Color(white: 0.60)
         case .small: Color(white: 0.36)
@@ -72,7 +72,6 @@ enum FileCategory: String, CaseIterable, Identifiable {
         return m
     }()
 
-    /// Directory names that imply a category for everything beneath them.
     private static let byDirectoryName: [String: FileCategory] = [
         "node_modules": .code, ".git": .code, "DerivedData": .code, "CoreSimulator": .code, ".build": .code,
         "target": .code, "Pods": .code, ".cargo": .code, ".rustup": .code, ".gradle": .code, ".m2": .code,
@@ -84,10 +83,8 @@ enum FileCategory: String, CaseIterable, Identifiable {
         "Mail": .appData, "Messages": .appData, "MobileSync": .appData,
     ]
 
-    /// Names that only mean "system" when they sit directly under `/`.
     private static let rootLevelSystemNames: Set<String> = ["System", "usr", "private", "bin", "sbin", "Library", "opt", "cores", "etc", "var"]
 
-    /// Category for a file given the category inherited from its directory chain.
     static func forFile(_ node: FSNode, inherited: FileCategory?) -> FileCategory {
         let ext = node.fileExtension
         if ext == "raw", node.name == "Docker.raw" { return .diskImages }

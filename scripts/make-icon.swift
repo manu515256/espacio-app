@@ -1,5 +1,3 @@
-// Renders the Espacio app icon (a glowing storage ring on a deep gradient)
-// at every iconset size and packs it into an .icns with iconutil.
 import AppKit
 
 let out = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "AppIcon.icns"
@@ -18,21 +16,19 @@ func draw(size s: CGFloat) -> NSBitmapImageRep {
     let rect = CGRect(x: inset, y: inset, width: s - 2 * inset, height: s - 2 * inset)
     let path = NSBezierPath(roundedRect: rect, xRadius: rect.width * 0.225, yRadius: rect.width * 0.225)
 
-    // Background gradient
     path.addClip()
     let bg = NSGradient(colors: [NSColor(white: 0.16, alpha: 1), NSColor(white: 0.09, alpha: 1)])!
     bg.draw(in: rect, angle: -90)
 
-    // Ring segments
     let center = CGPoint(x: rect.midX, y: rect.midY)
     let radius = rect.width * 0.30
     let lineWidth = rect.width * 0.13
     let segments: [(CGFloat, NSColor)] = [
-        (0.40, NSColor(hue: 0.58, saturation: 0.50, brightness: 0.74, alpha: 1)), // steel blue
-        (0.18, NSColor(hue: 0.11, saturation: 0.62, brightness: 0.84, alpha: 1)), // ochre
-        (0.14, NSColor(hue: 0.26, saturation: 0.40, brightness: 0.66, alpha: 1)), // olive
-        (0.12, NSColor(hue: 0.03, saturation: 0.55, brightness: 0.78, alpha: 1)), // terracotta
-        (0.16, NSColor(white: 1, alpha: 0.14)),                                    // free
+        (0.40, NSColor(hue: 0.58, saturation: 0.50, brightness: 0.74, alpha: 1)),
+        (0.18, NSColor(hue: 0.11, saturation: 0.62, brightness: 0.84, alpha: 1)),
+        (0.14, NSColor(hue: 0.26, saturation: 0.40, brightness: 0.66, alpha: 1)),
+        (0.12, NSColor(hue: 0.03, saturation: 0.55, brightness: 0.78, alpha: 1)),
+        (0.16, NSColor(white: 1, alpha: 0.14)),
     ]
     var start: CGFloat = 90
     let gap: CGFloat = 4
@@ -48,7 +44,6 @@ func draw(size s: CGFloat) -> NSBitmapImageRep {
         start -= sweep
     }
 
-    // Inner highlight
     let hl = NSGradient(colors: [NSColor(white: 1, alpha: 0.10), NSColor(white: 1, alpha: 0)])!
     hl.draw(in: NSBezierPath(rect: CGRect(x: rect.minX, y: rect.midY, width: rect.width, height: rect.height / 2)), angle: 90)
 

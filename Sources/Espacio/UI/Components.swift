@@ -2,10 +2,6 @@ import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
 
-// MARK: - Theme
-
-/// Restrained dark palette: neutral graphite surfaces, one amber accent,
-/// tomato for destructive actions, and earthy muted hues for data.
 enum Theme {
     static let background = Color(red: 0.082, green: 0.082, blue: 0.088)
     static let backgroundTop = Color(red: 0.105, green: 0.105, blue: 0.112)
@@ -14,28 +10,25 @@ enum Theme {
     static let tile = Color.white.opacity(0.035)
     static let track = Color.white.opacity(0.07)
 
-    static let accent = Color(hue: 0.105, saturation: 0.72, brightness: 0.92)   // amber
-    static let danger = Color(hue: 0.02, saturation: 0.70, brightness: 0.88)    // tomato
-    static let ok = Color(hue: 0.33, saturation: 0.38, brightness: 0.70)        // muted green
-    static let info = Color(hue: 0.58, saturation: 0.45, brightness: 0.74)      // steel blue
+    static let accent = Color(hue: 0.105, saturation: 0.72, brightness: 0.92)
+    static let danger = Color(hue: 0.02, saturation: 0.70, brightness: 0.88)
+    static let ok = Color(hue: 0.33, saturation: 0.38, brightness: 0.70)
+    static let info = Color(hue: 0.58, saturation: 0.45, brightness: 0.74)
     static let muted = Color(white: 0.55)
 
-    /// Ten muted, mutually distinguishable hues for the treemap (h, s, b).
     static let series: [(Double, Double, Double)] = [
-        (0.58, 0.50, 0.72), // steel blue
-        (0.11, 0.62, 0.80), // ochre
-        (0.26, 0.40, 0.64), // olive
-        (0.03, 0.55, 0.77), // terracotta
-        (0.47, 0.35, 0.66), // sea teal
-        (0.76, 0.30, 0.70), // dusty violet
-        (0.08, 0.45, 0.72), // tan
-        (0.60, 0.24, 0.66), // slate
-        (0.93, 0.42, 0.66), // plum
-        (0.55, 0.42, 0.78), // sky
+        (0.58, 0.50, 0.72),
+        (0.11, 0.62, 0.80),
+        (0.26, 0.40, 0.64),
+        (0.03, 0.55, 0.77),
+        (0.47, 0.35, 0.66),
+        (0.76, 0.30, 0.70),
+        (0.08, 0.45, 0.72),
+        (0.60, 0.24, 0.66),
+        (0.93, 0.42, 0.66),
+        (0.55, 0.42, 0.78),
     ]
 }
-
-// MARK: - Background
 
 struct AppBackground: View {
     var body: some View {
@@ -43,8 +36,6 @@ struct AppBackground: View {
             .ignoresSafeArea()
     }
 }
-
-// MARK: - Cards & typography
 
 struct Card<Content: View>: View {
     var padding: CGFloat = 18
@@ -148,7 +139,6 @@ struct Badge: View {
     }
 }
 
-/// Indeterminate spinning arc used while scanning.
 struct ScanRing: View {
     var size: CGFloat = 120
     var lineWidth: CGFloat = 10
@@ -168,7 +158,6 @@ struct ScanRing: View {
     }
 }
 
-/// Donut of used space split by category, remainder = free.
 struct RingChart: View {
     struct Segment: Identifiable {
         let id: String
@@ -206,8 +195,6 @@ struct RingChart: View {
         }
     }
 }
-
-// MARK: - Icons
 
 @MainActor
 enum IconCache {
@@ -259,24 +246,22 @@ struct NodeIcon: View {
     }
 }
 
-// MARK: - Helpers
-
 extension Date {
-    var relativeSpanish: String {
+    var relativeDescription: String {
         let f = RelativeDateTimeFormatter()
         f.unitsStyle = .short
+        f.locale = AppLanguage.current.locale
         return f.localizedString(for: self, relativeTo: Date())
     }
 
     var shortDate: String {
-        formatted(date: .abbreviated, time: .omitted)
+        formatted(Date.FormatStyle(date: .abbreviated, time: .omitted).locale(AppLanguage.current.locale))
     }
 }
 
 extension FSNode {
     var modifiedDate: Date? { modified > 0 ? Date(timeIntervalSince1970: modified) : nil }
     var parentPath: String { parent?.path ?? "" }
-    /// Home-relative, Finder-style path for display.
     var prettyPath: String {
         let home = NSHomeDirectory()
         let p = path
@@ -285,8 +270,6 @@ extension FSNode {
     }
 }
 
-/// Treemap colours: one muted hue per top-level sibling, nested items only
-/// vary in lightness so a folder reads as one family. Flat fills, no gradients.
 enum Palette {
     static func color(index: Int, depth: Int = 0, shade: Int = 0, kind: FSNode.Kind = .directory) -> Color {
         if kind == .aggregate { return Color(white: max(0.22, 0.40 - Double(depth) * 0.06)) }
@@ -296,14 +279,12 @@ enum Palette {
         return Color(hue: h, saturation: s, brightness: brightness)
     }
 
-    /// Darker flat fill for folders that show their children inside.
     static func container(index: Int, depth: Int = 0, kind: FSNode.Kind = .directory) -> Color {
         if kind == .aggregate { return Color(white: 0.20) }
         let (h, s, b) = Theme.series[((index % Theme.series.count) + Theme.series.count) % Theme.series.count]
         return Color(hue: h, saturation: s * 0.85, brightness: max(0.22, b * 0.42 - 0.04 * Double(depth)))
     }
 
-    // AppKit twins used by the CoreGraphics rasteriser.
     static func nsColor(index: Int, depth: Int = 0, shade: Int = 0, kind: FSNode.Kind = .directory) -> NSColor {
         if kind == .aggregate { return NSColor(white: max(0.22, 0.40 - Double(depth) * 0.06), alpha: 1) }
         let (h, s, b) = Theme.series[((index % Theme.series.count) + Theme.series.count) % Theme.series.count]
